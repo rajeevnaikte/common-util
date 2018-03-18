@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 public class FileCreatorTest
 {
     @Test
-    public void test() throws IOException
+    public void test() throws Exception
     {
         Files.deleteIfExists(Paths.get("test1"));
         Files.createFile(Paths.get("test1"));
@@ -19,17 +19,16 @@ public class FileCreatorTest
                 .createEmptyIfNoData()
                 .create();
 
-        assert state.onFileExistCalled == true;
-        assert state.onWriteCompleteCalled == true;
-        assert state.isFileExists() == true;
-        assert state.isWriteComplete() == true;
+        assert state.onFileExistCalled;
+        assert state.onWriteCompleteCalled;
+        assert state.isFileExists();
+        assert state.isWriteComplete();
     }
 
     public class TestState extends FileCreator.State
     {
-        public boolean onFileExistCalled = false;
-        public boolean onWriteCompleteCalled = false;
-        public boolean onWriteFailCalled = false;
+        boolean onFileExistCalled = false;
+        boolean onWriteCompleteCalled = false;
 
         public TestState(String file)
         {

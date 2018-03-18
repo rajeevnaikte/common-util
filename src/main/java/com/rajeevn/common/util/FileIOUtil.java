@@ -7,12 +7,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.rajeevn.common.util.ArraysUtil.itemAtIndex;
 
 /**
  * Utility methods for file system operations.
+ *
  * @author Rajeev naik
  * @since 2018/03/04
  */
@@ -20,6 +22,7 @@ public abstract class FileIOUtil
 {
     /**
      * This method will open the given file, then call the parameter, then will close the file.
+     *
      * @param file
      * @param operation to do after file is opened and before it is closed.
      */
@@ -36,6 +39,7 @@ public abstract class FileIOUtil
 
     /**
      * This method will create outputstream, then call the parameter, then close the outputstream.
+     *
      * @param file
      * @param operation to do after creating outputstream and before closing it
      */
@@ -51,9 +55,9 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #processInputFile(File, ThrowableConsumer)
      * @param filePath
      * @param operation
+     * @see #processInputFile(File, ThrowableConsumer)
      */
     public static void processInputFile(String filePath, ThrowableConsumer<FileInputStream, Exception> operation)
     {
@@ -61,9 +65,9 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #processOutputFile(File, ThrowableConsumer)
      * @param filePath
      * @param operation
+     * @see #processOutputFile(File, ThrowableConsumer)
      */
     public static void processOutputFile(String filePath, ThrowableConsumer<FileOutputStream, Exception> operation)
     {
@@ -72,9 +76,10 @@ public abstract class FileIOUtil
 
     /**
      * Will not throw exception if move fails
-     * @see #move(String, String)
+     *
      * @param filePath
      * @param moveToFilePath
+     * @see #move(String, String)
      */
     public static void moveQuietly(String filePath, String moveToFilePath)
     {
@@ -87,9 +92,9 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #moveQuietly(String, String)
      * @param file
      * @param moveToFilePath
+     * @see #moveQuietly(String, String)
      */
     public static void moveQuietly(File file, String moveToFilePath)
     {
@@ -98,6 +103,7 @@ public abstract class FileIOUtil
 
     /**
      * Move file from 'filePath' to 'moveToFilePath'
+     *
      * @param filePath
      * @param moveToFilePath
      * @throws IOException
@@ -108,10 +114,10 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #move(String, String)
      * @param file
      * @param moveToFilePath
      * @throws IOException
+     * @see #move(String, String)
      */
     public static void move(File file, String moveToFilePath) throws IOException
     {
@@ -120,6 +126,7 @@ public abstract class FileIOUtil
 
     /**
      * Delete given file.
+     *
      * @param filePath
      * @throws IOException
      */
@@ -129,9 +136,9 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #delete(String)
      * @param file
      * @throws IOException
+     * @see #delete(String)
      */
     public static void delete(File file) throws IOException
     {
@@ -140,8 +147,25 @@ public abstract class FileIOUtil
 
     /**
      * Will not throw exception if delete fails.
-     * @see #delete(String)
+     *
      * @param filePath
+     * @see #delete(String)
+     */
+    public static void deleteQuietly(Path filePath)
+    {
+        try
+        {
+            Files.delete(filePath);
+        } catch (IOException e)
+        {
+        }
+    }
+
+    /**
+     * Will not throw exception if delete fails.
+     *
+     * @param filePath
+     * @see #delete(String)
      */
     public static void deleteQuietly(String filePath)
     {
@@ -154,8 +178,8 @@ public abstract class FileIOUtil
     }
 
     /**
-     * @see #deleteQuietly(String)
      * @param file
+     * @see #deleteQuietly(String)
      */
     public static void deleteQuietly(File file)
     {
@@ -164,6 +188,7 @@ public abstract class FileIOUtil
 
     /**
      * To get extension of file in lowercase
+     *
      * @param file
      * @return
      */
@@ -172,5 +197,53 @@ public abstract class FileIOUtil
         return itemAtIndex(file.getName().split("."), 1)
                 .map(String::toLowerCase)
                 .orElse("");
+    }
+
+    public static String fileNameWithoutExt(File file)
+    {
+        String fileName = file.getName();
+        return fileName.substring(0, fileName.lastIndexOf('.'));
+    }
+
+    public static void deleteRecursively(String root) throws IOException
+    {
+        try
+        {
+            Files.walk(Paths.get(root))
+                    .forEach(path ->
+                    {
+                        try
+                        {
+                            Files.delete(path);
+                        } catch (IOException e)
+                        {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (Exception e)
+        {
+            throw new IOException(e);
+        }
+    }
+
+    public static void deleteRecursively(File root) throws IOException
+    {
+        deleteRecursively(root.getAbsolutePath());
+    }
+
+    public static void deleteQuietlyRecursively(String root)
+    {
+        try
+        {
+            Files.walk(Paths.get(root))
+                    .forEach(FileIOUtil::deleteQuietly);
+        } catch (IOException e)
+        {
+        }
+    }
+
+    public static void deleteQuietlyRecursively(File root)
+    {
+        deleteQuietlyRecursively(root.getAbsolutePath());
     }
 }
