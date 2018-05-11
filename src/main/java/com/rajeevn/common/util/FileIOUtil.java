@@ -10,7 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.rajeevn.common.util.ArraysUtil.itemAtIndex;
+import static com.rajeevn.common.util.IOUtil.processResource;
 
 /**
  * Utility methods for file system operations.
@@ -18,23 +18,21 @@ import static com.rajeevn.common.util.ArraysUtil.itemAtIndex;
  * @author Rajeev naik
  * @since 2018/03/04
  */
-public abstract class FileIOUtil
+public final class FileIOUtil
 {
+    private FileIOUtil()
+    {
+    }
+
     /**
      * This method will open the given file, then call the parameter, then will close the file.
      *
      * @param file
      * @param operation to do after file is opened and before it is closed.
      */
-    public static void processInputFile(File file, ThrowableConsumer<FileInputStream, Exception> operation)
+    public static void processInputFile(File file, ThrowableConsumer<FileInputStream> operation) throws Exception
     {
-        try (FileInputStream in = new FileInputStream(file))
-        {
-            operation.accept(in);
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        processResource(() -> new FileInputStream(file), operation);
     }
 
     /**
@@ -43,15 +41,9 @@ public abstract class FileIOUtil
      * @param file
      * @param operation to do after creating outputstream and before closing it
      */
-    public static void processOutputFile(File file, ThrowableConsumer<FileOutputStream, Exception> operation)
+    public static void processOutputFile(File file, ThrowableConsumer<FileOutputStream> operation) throws Exception
     {
-        try (FileOutputStream out = new FileOutputStream(file))
-        {
-            operation.accept(out);
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        processResource(() -> new FileOutputStream(file), operation);
     }
 
     /**
@@ -59,7 +51,7 @@ public abstract class FileIOUtil
      * @param operation
      * @see #processInputFile(File, ThrowableConsumer)
      */
-    public static void processInputFile(String filePath, ThrowableConsumer<FileInputStream, Exception> operation)
+    public static void processInputFile(String filePath, ThrowableConsumer<FileInputStream> operation) throws Exception
     {
         processInputFile(new File(filePath), operation);
     }
@@ -69,7 +61,7 @@ public abstract class FileIOUtil
      * @param operation
      * @see #processOutputFile(File, ThrowableConsumer)
      */
-    public static void processOutputFile(String filePath, ThrowableConsumer<FileOutputStream, Exception> operation)
+    public static void processOutputFile(String filePath, ThrowableConsumer<FileOutputStream> operation) throws Exception
     {
         processOutputFile(new File(filePath), operation);
     }
@@ -187,22 +179,41 @@ public abstract class FileIOUtil
     }
 
     /**
-     * To get extension of file in lowercase
-     *
      * @param file
      * @return
+     * @see #getFileExt(String)
      */
-    public static String getFileExtention(File file)
+    public static String getFileExt(File file)
     {
-        return itemAtIndex(file.getName().split("."), 1)
-                .map(String::toLowerCase)
-                .orElse("");
+        return getFileExt(file.getName());
     }
 
-    public static String fileNameWithoutExt(File file)
+    /**
+     * To get extension of file in lowercase
+     *
+     * @param fileName
+     * @return
+     */
+    public static String getFileExt(String fileName)
     {
-        String fileName = file.getName();
-        return fileName.substring(0, fileName.lastIndexOf('.'));
+        int extIndex = fileName.lastIndexOf('.');
+        if (extIndex == -1)
+            return "";
+        return fileName.substring(extIndex + 1).toLowerCase();
+    }
+
+    /**
+     * To remove file extension from file name
+     *
+     * @param fileName
+     * @return
+     */
+    public static String stripExt(String fileName)
+    {
+        int extIndex = fileName.lastIndexOf('.');
+        if (extIndex == -1)
+            return fileName;
+        return fileName.substring(0, extIndex);
     }
 
     public static void deleteRecursively(String root) throws IOException

@@ -2,7 +2,6 @@ package com.rajeevn.common.interfaces;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 /**
  * It is {@link BiFunction} with ability to throw specified exception.
@@ -11,19 +10,32 @@ import java.util.function.Function;
  * @param <T>
  * @param <U>
  * @param <R>
- * @param <E>
  */
 @FunctionalInterface
-public interface ThrowableBiFunction<T, U, R, E extends Exception>
+public interface ThrowableBiFunction<T, U, R>
 {
-    R apply(T t, U u) throws E;
+    R apply(T t, U u) throws Exception;
+
+    default BiFunction<T, U, R> doThrow()
+    {
+        return ((T t, U u) ->
+        {
+            try
+            {
+                return apply(t, u);
+            } catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
     /**
      * Handler to perform when the operation represented by this interface throws exception.
      * @param onThrow
      * @return
      */
-    default BiFunction<T, U, R> onThrow(Consumer<E> onThrow)
+    default BiFunction<T, U, R> onThrow(Consumer<Exception> onThrow)
     {
         return ((T t, U u) ->
         {
@@ -33,7 +45,28 @@ public interface ThrowableBiFunction<T, U, R, E extends Exception>
             }
             catch (Exception e)
             {
-                onThrow.accept((E) e);
+                onThrow.accept(e);
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Handler to perform when the operation represented by this interface throws exception.
+     *
+     * @param onThrow
+     * @return
+     */
+    default ThrowableBiFunction<T, U, R> onThrowThrowable(ThrowableConsumer<Exception> onThrow)
+    {
+        return ((T t, U u) ->
+        {
+            try
+            {
+                return apply(t, u);
+            } catch (Exception e)
+            {
+                onThrow.accept(e);
             }
             return null;
         });

@@ -1,27 +1,25 @@
 package com.rajeevn.common.interfaces;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
- * It is {@link Supplier} with ability to throw specified exception.
+ * It is {@link Runnable} with ability to throw specified exception.
  *
- * @param <T>
  * @author Rajeev Naik
  * @since 2018/03/04
  */
 @FunctionalInterface
-public interface ThrowableSupplier<T>
+public interface ThrowableRunnable
 {
-    T get() throws Exception;
+    void run() throws Exception;
 
-    default Supplier<T> doThrow()
+    default Runnable doThrow()
     {
         return (() ->
         {
             try
             {
-                return get();
+                run();
             } catch (Exception e)
             {
                 throw new RuntimeException(e);
@@ -35,18 +33,17 @@ public interface ThrowableSupplier<T>
      * @param onThrow
      * @return
      */
-    default Supplier<T> onThrow(Consumer<Exception> onThrow)
+    default Runnable onThrow(Consumer<Exception> onThrow)
     {
         return (() ->
         {
             try
             {
-                return get();
+                run();
             } catch (Exception e)
             {
                 onThrow.accept(e);
             }
-            return null;
         });
     }
 
@@ -56,18 +53,17 @@ public interface ThrowableSupplier<T>
      * @param onThrow
      * @return
      */
-    default ThrowableSupplier<T> onThrowThrowable(ThrowableConsumer<Exception> onThrow)
+    default ThrowableRunnable onThrowThrowable(ThrowableConsumer<Exception> onThrow)
     {
         return (() ->
         {
             try
             {
-                return get();
+                run();
             } catch (Exception e)
             {
                 onThrow.accept(e);
             }
-            return null;
         });
     }
 }

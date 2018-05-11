@@ -7,19 +7,32 @@ import java.util.function.Consumer;
  * @author Rajeev Naik
  * @since 2018/03/04
  * @param <T>
- * @param <E>
  */
 @FunctionalInterface
-public interface ThrowableConsumer<T, E extends Exception>
+public interface ThrowableConsumer<T>
 {
-    void accept(T t) throws E;
+    void accept(T t) throws Exception;
+
+    default Consumer<T> doThrow()
+    {
+        return ((T t) ->
+        {
+            try
+            {
+                accept(t);
+            } catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
     /**
      * Handler to perform when the operation represented by this interface throws exception.
      * @param onThrow
      * @return
      */
-    default Consumer<T> onThrow(Consumer<E> onThrow)
+    default Consumer<T> onThrow(Consumer<Exception> onThrow)
     {
         return ((T t) ->
         {
@@ -29,7 +42,27 @@ public interface ThrowableConsumer<T, E extends Exception>
             }
             catch (Exception e)
             {
-                onThrow.accept((E) e);
+                onThrow.accept(e);
+            }
+        });
+    }
+
+    /**
+     * Handler to perform when the operation represented by this interface throws exception.
+     *
+     * @param onThrow
+     * @return
+     */
+    default ThrowableConsumer<T> onThrowThrowable(ThrowableConsumer<Exception> onThrow)
+    {
+        return ((T t) ->
+        {
+            try
+            {
+                accept(t);
+            } catch (Exception e)
+            {
+                onThrow.accept(e);
             }
         });
     }

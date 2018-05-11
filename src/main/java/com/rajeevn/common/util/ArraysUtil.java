@@ -10,8 +10,12 @@ import static java.util.Optional.ofNullable;
  * @author Rajeev Naik
  * @since 2018/03/04
  */
-public abstract class ArraysUtil
+public final class ArraysUtil
 {
+    private ArraysUtil()
+    {
+    }
+
     /**
      * Get item at index. This method will handle for {@link IndexOutOfBoundsException}
      * @param arr

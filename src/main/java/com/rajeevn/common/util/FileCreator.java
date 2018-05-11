@@ -29,74 +29,21 @@ public class FileCreator<S extends FileCreator.State>
     private S state;
     private byte[] data;
     private boolean createEmptyIfNoData = false;
-    private ThrowableConsumer<S, ?> onFileExists;
+    private ThrowableConsumer<S> onFileExists;
     private Consumer<S> onWriteComplete;
     private BiConsumer<S, Exception> onWriteFail;
     private Function<S, byte[]> dataProvider;
 
     /**
-     * Object which holds state of execution. This will be provided to event handlers as parameter.
-     * Custom state object can be created by extending this.
+     * Event handler which will be called when the given file is already exists.
+     *
+     * @param action
+     * @return
      */
-    public static class State
+    public FileCreator<S> onFileExists(ThrowableConsumer<S> action)
     {
-        private File file;
-        private boolean fileExists = false;
-        private boolean writeComplete = false;
-        private boolean writing = false;
-
-        protected State(File file)
-        {
-            this.file = file;
-        }
-
-        protected State(String filePath)
-        {
-            this.file = new File(filePath);
-        }
-
-        public File getFile()
-        {
-            return file;
-        }
-
-        public boolean isFileExists()
-        {
-            return fileExists;
-        }
-
-        public boolean isWriteComplete()
-        {
-            return writeComplete;
-        }
-
-        public boolean isWriting()
-        {
-            return writing;
-        }
-
-        void setFileExists(boolean fileExists)
-        {
-            this.fileExists = fileExists;
-        }
-
-        void setWriteComplete(boolean writeComplete)
-        {
-            this.writeComplete = writeComplete;
-        }
-
-        void setWriting(boolean writing)
-        {
-            this.writing = writing;
-        }
-
-        /**
-         * Call this method to stop the calling function provided in {@link #setDataProvider(Function)}
-         */
-        public void finishWriting()
-        {
-            this.writing = false;
-        }
+        this.onFileExists = action;
+        return this;
     }
 
     public FileCreator(S state)
@@ -156,15 +103,57 @@ public class FileCreator<S extends FileCreator.State>
     }
 
     /**
-     * Event handler which will be called when the given file is already exists.
-     *
-     * @param action
+     * Command to execute file creation using provided handlers.
      * @return
      */
-    public FileCreator<S> onFileExists(ThrowableConsumer<S, ?> action)
+    public S create() throws Exception
     {
-        this.onFileExists = action;
-        return this;
+        File file = this.state.getFile();
+        if (file.exists())
+        {
+            this.state.fileExists();
+            if (this.onFileExists != null)
+                this.onFileExists.accept(this.state);
+        }
+
+        if (this.data != null || this.dataProvider != null || this.createEmptyIfNoData)
+        {
+            try
+            {
+                processOutputFile(file, out ->
+                {
+                    this.state.writing();
+                    if (this.data != null)
+                        out.write(this.data);
+                    else if (this.dataProvider != null)
+                    {
+                        while (this.state.isWriting())
+                        {
+                            byte[] data = this.dataProvider.apply(this.state);
+                            if (data != null)
+                                out.write(data);
+                        }
+                    }
+                });
+                this.state.setWriteComplete(true);
+                if (this.onWriteComplete != null)
+                {
+                    try
+                    {
+                        this.onWriteComplete.accept(this.state);
+                    } catch (Exception e)
+                    {
+                    }
+                }
+            } catch (Exception e)
+            {
+                this.state.setWriteComplete(false);
+                if (this.onWriteFail != null)
+                    this.onWriteFail.accept(this.state, e);
+            }
+        }
+
+        return this.state;
     }
 
     /**
@@ -236,56 +225,67 @@ public class FileCreator<S extends FileCreator.State>
     }
 
     /**
-     * Command to execute file creation using provided handlers.
-     * @return
+     * Object which holds state of execution. This will be provided to event handlers as parameter.
+     * Custom state object can be created by extending this.
      */
-    public S create() throws Exception
+    public static class State
     {
-        File file = this.state.getFile();
-        if (file.exists())
+        private File file;
+        private boolean fileExists = false;
+        private boolean writeComplete = false;
+        private boolean writing = false;
+
+        protected State(File file)
         {
-            this.state.setFileExists(true);
-            if (this.onFileExists != null)
-                this.onFileExists.accept(this.state);
+            this.file = file;
         }
 
-        if (this.data != null || this.dataProvider != null || this.createEmptyIfNoData)
+        protected State(String filePath)
         {
-            try
-            {
-                processOutputFile(file, out ->
-                {
-                    this.state.setWriting(true);
-                    if (this.data != null)
-                        out.write(this.data);
-                    else if (this.dataProvider != null)
-                    {
-                        while (this.state.isWriting())
-                        {
-                            byte[] data = this.dataProvider.apply(this.state);
-                            if (data != null)
-                                out.write(data);
-                        }
-                    }
-                });
-                this.state.setWriteComplete(true);
-                if (this.onWriteComplete != null)
-                {
-                    try
-                    {
-                        this.onWriteComplete.accept(this.state);
-                    } catch (Exception e)
-                    {
-                    }
-                }
-            } catch (Exception e)
-            {
-                this.state.setWriteComplete(false);
-                if (this.onWriteFail != null)
-                    this.onWriteFail.accept(this.state, e);
-            }
+            this.file = new File(filePath);
         }
 
-        return this.state;
+        public File getFile()
+        {
+            return file;
+        }
+
+        public boolean isFileExists()
+        {
+            return fileExists;
+        }
+
+        public boolean isWriteComplete()
+        {
+            return writeComplete;
+        }
+
+        public boolean isWriting()
+        {
+            return writing;
+        }
+
+        void fileExists()
+        {
+            this.fileExists = true;
+        }
+
+        void setWriteComplete(boolean writeComplete)
+        {
+            this.writeComplete = writeComplete;
+        }
+
+        void writing()
+        {
+            this.writing = true;
+        }
+
+        /**
+         * Call this method to stop the calling function provided in {@link #setDataProvider(Function)}
+         */
+        public void finishWriting()
+        {
+            this.writing = false;
+        }
     }
 }

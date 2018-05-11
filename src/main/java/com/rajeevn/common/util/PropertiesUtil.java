@@ -5,20 +5,24 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-import static com.rajeevn.common.util.FileIOUtil.getFileExtention;
+import static com.rajeevn.common.util.FileIOUtil.getFileExt;
 import static com.rajeevn.common.util.FileIOUtil.processInputFile;
 import static com.rajeevn.common.util.FileIOUtil.processOutputFile;
 
-public abstract class PropertiesUtil
+public final class PropertiesUtil
 {
-    public static Properties load(Properties prop, File file)
+    private PropertiesUtil()
+    {
+    }
+
+    public static Properties load(Properties prop, File file) throws Exception
     {
         if (prop == null)
             prop = new Properties();
         final Properties props = prop;
         processInputFile(file, in ->
         {
-            switch (getFileExtention(file))
+            switch (getFileExt(file))
             {
                 case "xml":
                     props.loadFromXML(in);
@@ -30,41 +34,48 @@ public abstract class PropertiesUtil
         return props;
     }
 
-    public static void store(Properties prop, File file)
+    public static void store(Properties prop, File file) throws Exception
     {
         processOutputFile(file, out -> prop.store(out, null));
     }
 
-    public static Properties load(Properties prop, String filePath)
+    public static Properties load(Properties prop, String filePath) throws Exception
     {
         return load(prop, new File(filePath));
     }
 
-    public static void store(Properties prop, String filePath)
+    public static void store(Properties prop, String filePath) throws Exception
     {
         store(prop, new File(filePath));
     }
 
-    public static void addOrUpdate(String filePath, Map<String, String> keyValMap)
+    public static boolean addOrUpdate(String filePath, Map<String, String> keyValMap)
     {
-        addOrUpdate(new File(filePath), keyValMap);
+        return addOrUpdate(new File(filePath), keyValMap);
     }
 
-    public static void addOrUpdate(File file, Map<String, String> keyValMap)
+    public static boolean addOrUpdate(File file, Map<String, String> keyValMap)
     {
-        addOrUpdate(file, props -> props.putAll(keyValMap));
+        return addOrUpdate(file, props -> props.putAll(keyValMap));
     }
 
-    public static void addOrUpdate(String filePath, Consumer<Properties> addProps)
+    public static boolean addOrUpdate(String filePath, Consumer<Properties> addProps)
     {
-        addOrUpdate(new File(filePath), addProps);
+        return addOrUpdate(new File(filePath), addProps);
     }
 
-    public static void addOrUpdate(File file, Consumer<Properties> addProps)
+    public static boolean addOrUpdate(File file, Consumer<Properties> addProps)
     {
-        Properties props = new Properties();
-        load(props, file);
-        addProps.accept(props);
-        store(props, file);
+        try
+        {
+            Properties props = new Properties();
+            load(props, file);
+            addProps.accept(props);
+            store(props, file);
+            return true;
+        } catch (Exception e)
+        {
+            return false;
+        }
     }
 }
