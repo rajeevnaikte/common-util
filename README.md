@@ -1,5 +1,12 @@
 # common-util
 Library for often used operations on various objects, such as Collections, Arrays, Files etc.
+```
+<dependency>
+  <groupId>com.rajeevn</groupId>
+  <artifactId>common-util</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
 
 # Throwable lambda
 ```
