@@ -162,7 +162,7 @@ public class FileCreator<S extends FileCreator.State>
      * @param moveToFilePath
      * @return
      */
-    public FileCreator<S> onFileExistsMove(String moveToFilePath)
+    public FileCreator<S> onFileExistsMoveTo(String moveToFilePath)
     {
         this.onFileExists = (state) -> move(state.getFile(), moveToFilePath);
         return this;
@@ -174,7 +174,7 @@ public class FileCreator<S extends FileCreator.State>
      * @param moveToFilePath
      * @return
      */
-    public FileCreator<S> onFileExistsMoveQuietly(String moveToFilePath)
+    public FileCreator<S> onFileExistsMoveQuietlyTo(String moveToFilePath)
     {
         this.onFileExists = (state) -> moveQuietly(state.getFile(), moveToFilePath);
         return this;

@@ -13,7 +13,7 @@ A command pattern to create file with data, with ability to add event handlers.<
 Usage Example:<br>
 ```
 FileCreator.State state = new FileCreator<>(new FileCreator.State("file path"))
-                .onFileExistsMove("move to location")
+                .onFileExistsMoveTo("move to location")
                 .createEmptyIfNoData()
                 .onWriteComplete(s -> System.out.println(s.getFile() + " wrote successfully"))
                 .onWriteFail((s, e) -> System.out.println(s.getFile() + " failed with error " + e.getMessage()))
